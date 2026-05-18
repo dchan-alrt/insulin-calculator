@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detemir Dose Calculator</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: rgba(17, 24, 39, 0.55);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    /* ── Modal shell ── */
+    .modal {
+      background: #ffffff;
+      border-radius: 14px;
+      width: 530px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 26px 28px 22px;
+      position: relative;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1f2e;
+    }
+    .modal-subtitle {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      font-size: 20px;
+      padding: 0;
+      line-height: 1;
+    }
+    .modal-close:hover { color: #1a1f2e; }
+
+    /* ── Progress bar ── */
+    .progress-bar {
+      height: 3px;
+      background: #e5e7eb;
+      border-radius: 2px;
+      margin-bottom: 22px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #2d3a8c;
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    /* ── Question labels ── */
+    .q-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 7px;
+    }
+    .q-text {
+      font-size: 15px;
+      font-weight: 500;
+      color: #1a1f2e;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    /* ── Option buttons ── */
+    .options-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .opt-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 15px;
+      border-radius: 10px;
+      border: 1.5px solid #e5e7eb;
+      background: #ffffff;
+      cursor: pointer;
+      font-size: 13.5px;
+      color: #1a1f2e;
+      text-align: left;
+      transition: border-color 0.15s, background 0.15s;
+      font-weight: 400;
+      line-height: 1.4;
+      width: 100%;
+    }
+    .opt-btn:hover { border-color: #4f5fbf; background: #f5f3ff; }
+    .opt-btn.selected { border-color: #2d3a8c; background: #eef2ff; }
+
+    .opt-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 15px;
+    }
+
+    /* ── Result boxes ── */
+    .result-box {
+      border-radius: 11px;
+      padding: 16px 18px;
+      margin-bottom: 4px;
+    }
+    .result-box.success { background: #f0fdf4; border: 1.5px solid #bbf7d0; }
+    .result-box.warning { background: #fffbeb; border: 1.5px solid #fde68a; }
+    .result-box.danger  { background: #fef2f2; border: 1.5px solid #fecaca; }
+    .result-box.info    { background: #eef2ff; border: 1.5px solid #c7d2fe; }
+
+    .result-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .result-box.success .result-title { color: #166534; }
+    .result-box.warning .result-title { color: #92400e; }
+    .result-box.danger  .result-title { color: #991b1b; }
+    .result-box.info    .result-title { color: #3730a3; }
+
+    .result-body { font-size: 13px; line-height: 1.65; color: #1a1f2e; }
+    .result-body p { margin-bottom: 7px; }
+    .result-body p:last-child { margin-bottom: 0; }
+    .result-body strong { font-weight: 600; }
+
+    /* ── Starting dose box ── */
+    .starting-dose-box {
+      background: #eef2ff;
+      border: 1.5px solid #c7d2fe;
+      border-radius: 11px;
+      padding: 15px 17px;
+    }
+    .starting-dose-box .dose-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #3730a3;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 8px;
+    }
+    .starting-dose-box p {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #1a1f2e;
+      margin-bottom: 6px;
+    }
+    .starting-dose-box p:last-child { margin-bottom: 0; }
+
+    /* ── Source line ── */
+    .source-line {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+    .source-line a { color: #4f5fbf; text-decoration: none; }
+    .source-line a:hover { text-decoration: underline; }
+
+    /* ── Footer buttons ── */
+    .modal-footer {
+      display: flex;
+      gap: 9px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .btn-back {
+      background: #ffffff;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      color: #1a1f2e;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    .btn-back:hover { background: #f3f4f6; }
+
+    .btn-next {
+      flex: 1;
+      background: #2d3a8c;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+      font-family: inherit;
+    }
+    .btn-next:hover { background: #4f5fbf; }
+    .btn-next:disabled { background: #c7d2fe; cursor: not-allowed; }
+
+    .btn-restart {
+      flex: 1;
+      background: #f3f4f6;
+      color: #2d3a8c;
+      border: 1.5px solid #c7d2fe;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-family: inherit;
+    }
+    .btn-restart:hover { background: #eef2ff; }
+  </style>
+</head>
+<body>
+
+  <div class="modal" role="dialog" aria-label="Detemir dose calculator">
+
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">Detemir Dose Calculator</div>
+        <div class="modal-subtitle" id="modalSubtitle">Answer a few questions to get a dosing recommendation</div>
+      </div>
+      <button class="modal-close" onclick="restart()" aria-label="Reset">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width: 20%;"></div>
+    </div>
+
+    <div id="stepContent"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+
+  </div>
+
+  <script>
+    const STEPS = ['species', 'q1', 'q2', 'nadir', 'result'];
+    let stepIdx = 0;
+    let state = { species: null, onInsulin: null, nadir: null, clinicalSigns: null };
+
+    function render() {
+      const content = document.getElementById('stepContent');
+      const footer  = document.getElementById('modalFooter');
+      const step    = STEPS[stepIdx];
+      const total   = 4; // visible step count (excluding result)
+
+      content.innerHTML = '';
+      footer.innerHTML  = '';
+
+      // ── Species ──
+      if (step === 'species') {
+        setProgress(20);
+        content.innerHTML = `
+          <div class="q-label">Step 1 of ${total}</div>
+          <div class="q-text">What species is the patient?</div>
+          <div class="options-grid">
+            <button class="opt-btn${state.species === 'cat' ? ' selected' : ''}" onclick="pick('species','cat',this)">
+              <div class="opt-icon">🐱</div>Cat
+            </button>
+            <button class="opt-btn${state.species === 'dog' ? ' selected' : ''}" onclick="pick('species','dog',this)">
+              <div class="opt-icon">🐶</div>Dog
+            </button>
+          </div>`;
+        footer.innerHTML = `<button class="btn-next" onclick="advance()" ${state.species ? '' : 'disabled'}>Continue <i class="ti ti-arrow-right"></i></button>`;
+      }
+
+      // ── On Detemir? ──
+      else if (step === 'q1') {
+        setProgress(40);
+        content.innerHTML = `
+          <div class="q-label">Step 2 of ${total}</div>
+          <div class="q-text">Is the patient currently on Detemir?</div>
+          <div class="options-grid">
+            <button class="opt-btn${state.onInsulin === 'no' ? ' selected' : ''}" onclick="pick('onInsulin','no',this)">
+              <div class="opt-icon"><i class="ti ti-circle-x" style="color:#ef4444;font-size:17px;"></i></div>
+              No — newly diagnosed / just starting insulin therapy
+            </button>
+            <button class="opt-btn${state.onInsulin === 'yes' ? ' selected' : ''}" onclick="pick('onInsulin','yes',this)">
+              <div class="opt-icon"><i class="ti ti-circle-check" style="color:#16a34a;font-size:17px;"></i></div>
+              Yes — adjusting dose from monitoring
+            </button>
+          </div>`;
+        footer.innerHTML = `
+          <button class="btn-back" onclick="goBack()"><i class="ti ti-arrow-left"></i> Back</button>
+          <button class="btn-next" onclick="advance()" ${state.onInsulin ? '' : 'disabled'}>Continue <i class="ti ti-arrow-right"></i></button>`;
+      }
+
+      // ── Starting dose (new patient) or Nadir (existing) ──
+      else if (step === 'q2') {
+        if (state.onInsulin === 'no') {
+          setProgress(100);
+          setResultHeader();
+          const msg = state.species === 'cat'
+            ? `The AAHA suggested starting dose is:<br>
+               &bull; <strong>0.5 U/kg q 12 hr</strong> if BG &gt; 360 mg/dL<br>
+               &bull; <strong>0.25 U/kg q 12 hr</strong> if BG &lt; 360 mg/dL`
+            : `The AAHA suggested starting dose is <strong>0.10 U/kg q 12 hr</strong>.<br><br>
+               <strong>Note:</strong> Detemir is very potent in dogs (caution required). Suitable for dogs in which NPH and lente have short duration of activity.`;
+          content.innerHTML = `
+            <div class="starting-dose-box">
+              <div class="dose-title"><i class="ti ti-info-circle"></i> Starting Dose Recommendation</div>
+              <p>${msg}</p>
+            </div>
+            <p class="source-line">Source: <a href="https://www.aaha.org/resources/2018-aaha-diabetes-management-guideline-for-dogs-and-cats/monitoring" target="_blank">AAHA 2018 Diabetes Management Guidelines ↗</a></p>`;
+          footer.innerHTML = `
+            <button class="btn-back" onclick="goBack()"><i class="ti ti-arrow-left"></i> Back</button>
+            <button class="btn-restart" onclick="restart()"><i class="ti ti-refresh"></i> Start over</button>`;
+        } else {
+          setProgress(60);
+          content.innerHTML = `
+            <div class="q-label">Step 3 of ${total}</div>
+            <div class="q-text">What is the nadir (lowest blood glucose reading)?</div>
+            <div class="options-grid">
+              <button class="opt-btn${state.nadir === 'high' ? ' selected' : ''}" onclick="pick('nadir','high',this)">
+                <div class="opt-icon" style="background:#fef2f2;"><i class="ti ti-arrow-up" style="color:#dc2626;font-size:16px;"></i></div>
+                &gt; 150 mg/dL
+              </button>
+              <button class="opt-btn${state.nadir === 'normal' ? ' selected' : ''}" onclick="pick('nadir','normal',this)">
+                <div class="opt-icon" style="background:#f0fdf4;"><i class="ti ti-check" style="color:#16a34a;font-size:16px;"></i></div>
+                80–150 mg/dL
+              </button>
+              <button class="opt-btn${state.nadir === 'low' ? ' selected' : ''}" onclick="pick('nadir','low',this)">
+                <div class="opt-icon" style="background:#fffbeb;"><i class="ti ti-arrow-down" style="color:#d97706;font-size:16px;"></i></div>
+                &lt; 80 mg/dL
+              </button>
+            </div>`;
+          footer.innerHTML = `
+            <button class="btn-back" onclick="goBack()"><i class="ti ti-arrow-left"></i> Back</button>
+            <button class="btn-next" onclick="advance()" ${state.nadir ? '' : 'disabled'}>Continue <i class="ti ti-arrow-right"></i></button>`;
+        }
+      }
+
+      // ── Clinical signs ──
+      else if (step === 'nadir') {
+        setProgress(80);
+        const isHypo = state.nadir === 'low';
+        content.innerHTML = `
+          <div class="q-label">Step 4 of ${total}</div>
+          <div class="q-text">Are there clinical signs${isHypo ? ' of hypoglycemia' : ''}?</div>
+          <div class="options-grid">
+            <button class="opt-btn${state.clinicalSigns === 'no' ? ' selected' : ''}" onclick="pick('clinicalSigns','no',this)">
+              <div class="opt-icon"><i class="ti ti-mood-happy" style="color:#16a34a;font-size:17px;"></i></div>
+              No clinical signs
+            </button>
+            <button class="opt-btn${state.clinicalSigns === 'yes' ? ' selected' : ''}" onclick="pick('clinicalSigns','yes',this)">
+              <div class="opt-icon"><i class="ti ti-alert-triangle" style="color:#d97706;font-size:17px;"></i></div>
+              Yes, clinical signs present
+            </button>
+          </div>`;
+        footer.innerHTML = `
+          <button class="btn-back" onclick="goBack()"><i class="ti ti-arrow-left"></i> Back</button>
+          <button class="btn-next" onclick="advance()" ${state.clinicalSigns ? '' : 'disabled'}>View Recommendation <i class="ti ti-arrow-right"></i></button>`;
+      }
+
+      // ── Result ──
+      else {
+        setProgress(100);
+        setResultHeader();
+        renderResult(content);
+        footer.innerHTML = `
+          <button class="btn-back" onclick="goBack()"><i class="ti ti-arrow-left"></i> Back</button>
+          <button class="btn-restart" onclick="restart()"><i class="ti ti-refresh"></i> Start over</button>`;
+      }
+    }
+
+    function renderResult(content) {
+      const sp    = state.species;
+      const nadir = state.nadir;
+      const signs = state.clinicalSigns;
+      let html = '';
+
+      if (nadir === 'high' && signs === 'no') {
+        html = `<div class="result-box warning">
+          <div class="result-title"><i class="ti ti-clipboard-list"></i> Path 1A — Nadir &gt; 150 mg/dL, No Clinical Signs</div>
+          <div class="result-body">
+            <p>Consider stress hyperglycemia; maintain on same dose; recheck in 1 month.</p>
+            <p>Assess the patient's weight:</p>
+            <p>&bull; <strong>Maintaining/gaining weight:</strong> Keep insulin dose the same and recheck in 1–3 months.</p>
+            <p>&bull; <strong>Losing weight:</strong> Consider increasing dose by 10% or &frac12; unit/patient (whichever is greater) and recheck in 14 days.</p>
+            <p><strong>Consider the presence of insulin resistance if:</strong></p>
+            ${sp === 'dog'
+              ? '<p>&bull; In dogs, insulin dose &ge; 1 U/kg/dose with no response, or 1.5 U/kg fails to bring BG below 300 mg/dL.</p>'
+              : '<p>&bull; In cats, insulin dose &ge; 0.5 U/dose with no response.</p>'
+            }
+          </div>
+        </div>`;
+
+      } else if (nadir === 'high' && signs === 'yes') {
+        html = `<div class="result-box warning">
+          <div class="result-title"><i class="ti ti-trending-up"></i> Path 1B — Nadir &gt; 150 mg/dL, Clinical Signs Present</div>
+          <div class="result-body">
+            ${sp === 'dog'
+              ? '<p><strong>Increase dose 10–25%</strong> and perform blood glucose curve (BGC) in <strong>7–14 days</strong>.</p>'
+              : '<p><strong>Increase dose 0.5–1 U/dose.</strong> If giving every 24 hours, consider switching to BID. Perform BGC in <strong>7–14 days</strong>.</p>'
+            }
+          </div>
+        </div>`;
+
+      } else if (nadir === 'normal' && signs === 'no') {
+        html = `<div class="result-box success">
+          <div class="result-title"><i class="ti ti-circle-check"></i> Path 2A — Nadir 80–150 mg/dL, No Clinical Signs</div>
+          <div class="result-body">
+            <p>Maintain on <strong>same dose</strong> of insulin. Blood glucose is well-controlled.</p>
+          </div>
+        </div>`;
+
+      } else if (nadir === 'normal' && signs === 'yes') {
+        html = `<div class="result-box warning">
+          <div class="result-title"><i class="ti ti-alert-circle"></i> Path 2B — Nadir 80–150 mg/dL, Clinical Signs Present</div>
+          <div class="result-body">
+            <p>&bull; <strong>If clinical signs are controlled:</strong> no adjustment needed.</p>
+            <p>&bull; <strong>If clinical signs are not controlled:</strong> do not adjust the insulin dose. Consider the following:</p>
+            <p>&mdash; BGC is not reflective of overall control; BGC varies day to day.</p>
+            <p>&mdash; Inappropriate insulin duration of action. If giving once a day, consider q 12 hr therapy. If giving q 12 hr, may need to consider changing insulin.</p>
+            <p>&mdash; Overlap of insulin action. If BG is still decreasing at end of day, subsequent dose may cause hypoglycemia. May need to give a lower dose in the evening.</p>
+            <p>&mdash; Presence of another disease is causing the clinical signs.</p>
+          </div>
+        </div>`;
+
+      } else if (nadir === 'low' && signs === 'yes') {
+        if (sp === 'cat') {
+          html = `<div class="result-box danger">
+            <div class="result-title"><i class="ti ti-alert-triangle"></i> Path 3A — Nadir &lt; 80 mg/dL, Hypoglycemia Signs (Cat)</div>
+            <div class="result-body">
+              <p>&bull; <strong>If BG is never &gt; 250 mg/dL,</strong> consider remission — discontinue insulin. Monitor for clinical signs and recheck urine glucose and/or BGC/CGM in <strong>3–7 days</strong>.</p>
+              <p>&bull; If no clinical signs recur, BG remains &lt; 250 mg/dL and urine glucose remains negative, continue monitoring for recurrences.</p>
+              <p>&bull; If clinical signs recur and urine glucose becomes positive, start <strong>1 U/cat every 24 hours</strong> and reassess blood glucose monitoring.</p>
+            </div>
+          </div>`;
+        } else {
+          html = `<div class="result-box danger">
+            <div class="result-title"><i class="ti ti-alert-triangle"></i> Path 3A — Nadir &lt; 80 mg/dL, Hypoglycemia Signs (Dog)</div>
+            <div class="result-body">
+              <p>&bull; <strong>Discontinue insulin for 12 hours.</strong> Do not restart until BG &gt; 250 mg/dL.</p>
+              <p>&bull; Decrease insulin dose by <strong>10–50%</strong>; perform blood glucose curve in <strong>24 hours</strong>.</p>
+              <p>&bull; If hypoglycemia persists, repeat decrease and BGC steps until no longer hypoglycemic.</p>
+              <p>&bull; If no longer hypoglycemic, continue new dose and perform blood glucose curve in <strong>7–14 days</strong>.</p>
+            </div>
+          </div>`;
+        }
+
+      } else if (nadir === 'low' && signs === 'no') {
+        if (sp === 'cat') {
+          html = `<div class="result-box danger">
+            <div class="result-title"><i class="ti ti-arrow-down-circle"></i> Path 3B — Nadir &lt; 80 mg/dL, No Clinical Signs (Cat)</div>
+            <div class="result-body">
+              <p>&bull; <strong>Discontinue insulin for 12 hours.</strong> Do not restart until BG &gt; 250 mg/dL.</p>
+              <p>&bull; Decrease insulin dose by <strong>0.5–1 U</strong>; perform blood glucose curve in <strong>24 hours</strong>.</p>
+              <p>&bull; If hypoglycemia persists, repeat decrease and BGC steps until no longer hypoglycemic.</p>
+              <p>&bull; If no longer hypoglycemic, continue new dose and perform blood glucose curve in <strong>7–14 days</strong>.</p>
+            </div>
+          </div>`;
+        } else {
+          html = `<div class="result-box danger">
+            <div class="result-title"><i class="ti ti-arrow-down-circle"></i> Path 3B — Nadir &lt; 80 mg/dL, No Clinical Signs (Dog)</div>
+            <div class="result-body">
+              <p>&bull; <strong>Discontinue insulin for 12 hours.</strong> Do not restart until BG &gt; 250 mg/dL.</p>
+              <p>&bull; Decrease insulin dose by <strong>10–25%</strong>; perform blood glucose curve in <strong>24 hours</strong>.</p>
+              <p>&bull; If hypoglycemia persists, repeat decrease and BGC steps until no longer hypoglycemic.</p>
+              <p>&bull; If no longer hypoglycemic, continue new dose and perform blood glucose curve in <strong>7–14 days</strong>.</p>
+            </div>
+          </div>`;
+        }
+      }
+
+      html += `<p class="source-line">Source: <a href="https://www.aaha.org/resources/2018-aaha-diabetes-management-guideline-for-dogs-and-cats/monitoring" target="_blank">AAHA 2018 Diabetes Management Guidelines ↗</a></p>`;
+      content.innerHTML = html;
+    }
+
+    function pick(field, val, el) {
+      state[field] = val;
+      el.closest('.options-grid').querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('modalFooter').querySelectorAll('.btn-next').forEach(b => b.disabled = false);
+    }
+
+    function advance() {
+      if (stepIdx < STEPS.length - 1) stepIdx++;
+      render();
+    }
+
+    function goBack() {
+      resetHeader();
+      if (stepIdx > 0) stepIdx--;
+      render();
+    }
+
+    function restart() {
+      resetHeader();
+      state = { species: null, onInsulin: null, nadir: null, clinicalSigns: null };
+      stepIdx = 0;
+      render();
+    }
+
+    function setProgress(pct) {
+      document.getElementById('progressFill').style.width = pct + '%';
+    }
+
+    function setResultHeader() {
+      document.getElementById('modalTitle').textContent = 'Dosing Recommendation';
+      document.getElementById('modalSubtitle').textContent = 'Based on the clinical information provided';
+    }
+
+    function resetHeader() {
+      document.getElementById('modalTitle').textContent = 'Detemir Dose Calculator';
+      document.getElementById('modalSubtitle').textContent = 'Answer a few questions to get a dosing recommendation';
+    }
+
+    // Init
+    render();
+  </script>
+
+</body>
+</html>
